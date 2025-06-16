@@ -1,0 +1,17 @@
+{
+    "dataset": "TinyStories",
+    "architecture": "LLaMa",
+    "validation": 50,
+    "dmodel": 512,
+    "num_heads": 8,
+    "n_layers_per_stage": 3,
+    "n_stages": 4,
+    "seq_l": 512,
+    "batch_size": 64,
+    "mb_count": 4,
+    "lr_scale": 1.1,
+    "max_iterations": 100001,
+    "lr": 0.0006,
+    "16": 0.001,
+    "10": 0.0006
+}

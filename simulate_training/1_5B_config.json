@@ -1,0 +1,16 @@
+{
+    "dataset": "RedPyjamas",
+    "architecture": "LLaMa",
+    "validation": 20,
+    "dmodel": 2048,
+    "num_heads": 16,
+    "n_layers_per_stage": 4,
+    "n_stages": 6,
+    "seq_l": 4096,
+    "batch_size": 2,
+    "mb_count": 8,
+    "lr_scale": 1.1,
+    "max_iterations": 100001,
+    "lr": 0.0003,
+    "16": 0.008
+}

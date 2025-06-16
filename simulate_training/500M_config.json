@@ -1,0 +1,19 @@
+{
+    "dataset": "OpenWebText",
+    "architecture": "LLaMa",
+    "validation": 50,
+    "dmodel": 1024,
+    "num_heads": 16,
+    "n_layers_per_stage": 4,
+    "n_stages": 6,
+    "seq_l": 1024,
+    "batch_size": 16,
+    "mb_count": 4,
+    "lr_scale": 1.2,
+    "max_iterations": 100001,
+    "lr": 0.0003,
+    "16": 0.004,
+    "33": 0.01,
+    "10": 0.002,
+    "5": 0.0009
+}
