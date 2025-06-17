@@ -1,7 +1,21 @@
 Official repo of the All is not Lost Paper.
 
 
-To run the simulated fault training run one of the files in [simulate_training](simulate_training/) like:
+# Setup
+
+The repository depends on two libraries:
+
+- [simplellm](https://github.com/NikolayBlagoev/simplellm) - for construction of the models, loading datasets, tokenizers, etc.
+
+- [DecCom](https://github.com/NikolayBlagoev/DecCom-Python) - for communication between devices
+
+You can install both by cloning the repo and doing ```pip install .``` or by running the [setup.sh](/setup.sh) provided here.
+
+Additionally, you need to install the requirements in [requirements.txt](/requirements.txt) with ```pip install -r requirements.txt```
+
+# Simulated training
+
+To run the simulated fault training run one of the files in [simulate_training](/simulate_training/) like:
 
 ```
 ./run.sh no_failure 4 10 500M_config.json 0
@@ -12,7 +26,7 @@ The scripts have form:
 ./run.sh [SETTING] [WORLD_SIZE] [FAILURE PROBABILITY] [MODEL CONFIG] 0
 ```
 
-You can use [run.sh](simulate_training/run.sh) for training with swaps and [run_2.sh](simulate_training/run_2.sh) for training without swaps
+You can use [run.sh](/simulate_training/run.sh) for training with swaps and [run_2.sh](/simulate_training/run_2.sh) for training without swaps
 
 All training scripts:
 
@@ -45,14 +59,18 @@ All training scripts:
 ```
 
 
-To evaluate throughput of different strategies, use the scripts in [communication/](communication/)
 
-The repository depends on two libraries:
+# Throughput tests
 
-- [simplellm](https://github.com/NikolayBlagoev/simplellm) - for construction of the models, loading datasets, tokenizers, etc.
+To evaluate throughput of different strategies, use the scripts in [communication/](/communication/)
 
-- [DecCom](https://github.com/NikolayBlagoev/DecCom-Python) - for communication between devices
+You can run a given test via [run_throughput.sh](/run_throughput.sh):
 
-You can install both by cloning the repo and doing ```pip install .``` or by running the [setup.sh](/setup.sh) provided here.
+```
+./run_throughput.sh [STARTING NODE] [END NODE] [SETTING] [FAILURE RATE]
+```
 
-Additionally, you need to install the requirements in [requirements.txt](/requirements.txt) with ```pip install -r requirements.txt```
+Failure rate defines the config file in [failure_p_configs](/failure_p_configs/) to use (showing which node crashes at which iteration)
+
+You can generate new configs via [failure_generator.py](/failure_generator.py)
+
