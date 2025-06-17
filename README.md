@@ -1,6 +1,6 @@
 Official repo of the All is not Lost Paper.
 
-# All is Not Lost (AKA CheckFfree)
+# All is Not Lost (CheckFree)
 
 A novel way of recovering weights after a fault, without relying on checkpointing or additional computation, which improves the training time compared to the state of the art by over 10%.
 
