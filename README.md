@@ -1,4 +1,4 @@
-Official repo of the All is not Lost Paper.
+Official repo of the *All is not Lost: LLM Recovery without Checkpoints*.
 
 # All is Not Lost (CheckFree)
 
