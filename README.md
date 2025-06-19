@@ -7,7 +7,7 @@ A novel way of recovering weights after a fault, without relying on checkpointin
 - **Novel checkpoint-less recovery:** CheckFree uses the weights of neighbouring stages to approximate the weights of the lost stage.
 
 
-- **200% speed up to conventional checkpointing:** CheckFree and CheckFree+ can achieve up to 200% training time speed up compared to conventional checkpointing in the presence of frequent stage faults.
+- **1.6x speed up to conventional checkpointing:** CheckFree and CheckFree+ can achieve up to 1.6x training time speed up compared to conventional checkpointing in the presence of frequent stage faults.
 
 # Setup
 
