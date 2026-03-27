@@ -31,7 +31,7 @@ os.environ["MASTER_ADDR"] = "localhost"
 world_size = int(argv[4])
 os.environ["MASTER_PORT"] = "29500"
 h_failure_probability = int(argv[5])
-dist.init_process_group("gloo", rank=rank, world_size=world_size)
+dist.init_process_group("nccl", rank=rank, world_size=world_size)
 start_iter = int(argv[7]) if len(argv) > 7 else 0
 with open(argv[6],"r") as fd:
     config = json.load(fd)
@@ -240,7 +240,7 @@ for itr in range(max_iterations):
                 # holds embedding and dembedding
                 continue
             can_fail = random.random() > iter_success_probability
-            if can_fail and s != 1 and s != 6:
+            if can_fail:
                 failures[s] = random.randint(0,mb_count-1)
                 failures[s] = 0
         
@@ -302,15 +302,15 @@ for itr in range(max_iterations):
                         tmp = []
                         for param in s.parameters():
                             if param.grad == None:
-                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                tmp.append(torch.zeros_like(param).view(-1))                      
                                 continue
                             tmp.append(param.data.view(-1))
                             
-                        prev_grad = torch.cat(tmp).to("cpu")
-                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        prev_grad = torch.cat(tmp)
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.AVG)
                         tmp = torch.split(prev_grad, vls[idx][1])
                         for pi, param in enumerate(s.parameters()):
-                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device) # average
                         dist.barrier()
                     elif checkpoint_mode == "ours-zero":
                         if i == 1:
@@ -344,15 +344,15 @@ for itr in range(max_iterations):
                         tmp = []
                         for param in s.parameters():
                             if param.grad == None:
-                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                tmp.append(torch.zeros_like(param).view(-1))                      
                                 continue
                             tmp.append(param.data.view(-1))
                             
-                        prev_grad = torch.cat(tmp).to("cpu")
-                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        prev_grad = torch.cat(tmp)
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.AVG)
                         tmp = torch.split(prev_grad, vls[idx][1])
                         for pi, param in enumerate(s.parameters()):
-                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device) # average
                         dist.barrier()
                     elif checkpoint_mode == "ours-random":
                         
@@ -379,18 +379,17 @@ for itr in range(max_iterations):
                         tmp = []
                         for param in s.parameters():
                             if param.grad == None:
-                                tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                                tmp.append(torch.zeros_like(param).view(-1))                      
                                 continue
                             tmp.append(param.data.view(-1))
                             
-                        prev_grad = torch.cat(tmp).to("cpu")
-                        dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+                        prev_grad = torch.cat(tmp)
+                        dist.all_reduce(prev_grad, op = dist.ReduceOp.AVG)
                         tmp = torch.split(prev_grad, vls[idx][1])
                         for pi, param in enumerate(s.parameters()):
-                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
+                            param.data = tmp[pi].view(vls[idx][0][pi]).to(device) # average
                         dist.barrier()
-                            
-                    elif checkpoint_mode == "ours-grad-avg":
+                    elif checkpoint_mode == "ours-avg-ablation":
                         if i == len(stages)-1:
                             m1 = deepcopy(checkpoints_last)
                             m2 = deepcopy(stages[4].state_dict())
@@ -447,8 +446,8 @@ for itr in range(max_iterations):
                         else:
                             m1 = deepcopy(stages[i+1].state_dict())
                             m2 = deepcopy(stages[i-1].state_dict())
-                            alpha = abs(prev_gradient_norm[i+1]) + 0.0001
-                            beta = abs(prev_gradient_norm[i-1]) + 0.0001
+                            alpha = 0.5
+                            beta = 0.5
                             if config["architecture"] == "LLaMa":
                                 stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
                                     device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
@@ -499,6 +498,71 @@ for itr in range(max_iterations):
                             # for pi, param in enumerate(s.parameters()):
                             #     param.data = tmp[pi].view(vls[idx][0][pi]).to(device)/world_size # average
                             # dist.barrier()
+                         
+                    elif checkpoint_mode == "ours-grad-avg":
+                        if i == len(stages)-1:
+                            m1 = deepcopy(stages[5].state_dict())
+                            
+                            stages[i].load_state_dict(m1)
+                            s = stages[i]
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+
+                            del m1
+                            
+                            
+                        elif i == 1: 
+                            m1 = deepcopy(stages[2].state_dict())
+                            stages[i].load_state_dict(m1)
+                            s = stages[i]
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                            
+                            del m1
+                        elif i == 2: 
+                            m1 = deepcopy(stages[1].state_dict())
+                            
+                            stages[i].load_state_dict(m1)
+                            s = stages[i]
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+
+                            del m1
+                        elif i == 5: 
+                            m1 = deepcopy(stages[6].state_dict())
+                            
+                            stages[i].load_state_dict(m1)
+                            s = stages[i]
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                          
+                            del m1
+                            
+                        else:
+                            m1 = deepcopy(stages[i+1].state_dict())
+                            m2 = deepcopy(stages[i-1].state_dict())
+                            alpha = abs(prev_gradient_norm[i+1]) + 0.0001
+                            beta = abs(prev_gradient_norm[i-1]) + 0.0001
+                            if config["architecture"] == "LLaMa":
+                                stages[i] = LLamaStage(dmodel=dmodel,num_heads=num_heads,
+                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,padding_idx=tokenizer.pad_id)
+                            else:
+                                stages[i] = GPTStage(dmodel=dmodel,num_heads=num_heads,
+                                    device=device, n_layers=n_layers_per_stage, ctx_size=seq_l,dropout_prob=0)
+                            m3 = stages[i].state_dict()
+                            for key in m1:
+                                m3[key] = (alpha*m1[key] + beta*m2[key]) / (alpha + beta)
+                            stages[i].load_state_dict(m3)
+                            s = stages[i]
+                            
+                            optimizers[i] = make_optim(s.parameters(),lr = lr_scale*init_lr,itr=itr)
+                            # for optim in optimizers:
+                            #     optim.optimizer.zero_grad()
+                            
+                            del m3
+                            del m2
+                            del m1
+                        
                         
                         
                     
@@ -514,11 +578,38 @@ for itr in range(max_iterations):
                     elif checkpoint_mode == "no_failure":
                         can_fail = False
                     
+                with torch.autocast(device_type="cuda",dtype=torch.bfloat16):
+                    if i == 0:
+                        # tmp = x.detach().to("cpu")
+                        x = s.embed(x)
+                        # input_output_cahce[0].append((tmp,x.detach().to("cpu")))
+                    else:
+                        if i == 1 and mbid % 2 == 1:
+                            # print("running out of order",2,mbid)
+                            # tmp = x.detach().clone().to("cpu")
+                            x = stages[2](x)
+                            # input_output_cahce[2].append((tmp,x.detach().clone().to("cpu")))
+                        elif i == 2 and mbid % 2 == 1:
+                            # print("running out of order",1,mbid)
+                            # tmp = x.detach().clone().to("cpu")
+                            x = stages[1](x)
+                            # input_output_cahce[1].append((tmp,x.detach().clone().to("cpu")))
+                        elif i == 5 and mbid % 2 == 1:
+                            # print("running out of order",6,mbid)
+                            # tmp = x.detach().clone().to("cpu")
+                            x = stages[6](x)
+                            # input_output_cahce[6].append((tmp,x.detach().clone().to("cpu")))
+                        elif i == 6 and mbid % 2 == 1:
+                            # print("running out of order",5,mbid)
+                            # tmp = x.detach().clone().to("cpu")
 
-                if i == 0:
-                    x = s.embed(x)
-                else:
-                   x = s(x)
+                            x = stages[5](x)
+                            # input_output_cahce[5].append((tmp,x.detach().clone().to("cpu")))
+                        else:
+                            # tmp = x.detach().clone().to("cpu")
+                            # print("running",i,mbid)
+                            x = s(x)
+                            # input_output_cahce[i].append((tmp,x.detach().clone().to("cpu")))
                 # input_output_cahce[i].append(x.detach().to("cpu"))
             x = stages[0].forward_end(x)
             
@@ -545,15 +636,15 @@ for itr in range(max_iterations):
             tmp = []
             for param in s.parameters():
                 if param.grad == None:
-                    tmp.append(torch.zeros_like(param,device="cpu").view(-1))                      
+                    tmp.append(torch.zeros_like(param).view(-1))                      
                     continue
                 tmp.append(param.grad.view(-1))
                 param.grad = None
-            prev_grad = torch.cat(tmp).to("cpu")
-            dist.all_reduce(prev_grad, op = dist.ReduceOp.SUM)
+            prev_grad = torch.cat(tmp)
+            dist.all_reduce(prev_grad, op = dist.ReduceOp.AVG)
             tmp = torch.split(prev_grad, vls[idx][1])
             for i, param in enumerate(s.parameters()):
-                param.grad = tmp[i].view(vls[idx][0][i]).to(device)/world_size # average
+                param.grad = tmp[i].view(vls[idx][0][i]).to(device) # average
         
         for i,s in enumerate(stages):
             tmp = []
@@ -582,7 +673,7 @@ for itr in range(max_iterations):
             print("SAVED")
         
         
-        if itr % 500 == 0:
+        if itr % 500 == 0 and rank == 0:
             perplxities = []
             normal_loss = []
             iter_vs = iter(validation_dataset)
@@ -605,14 +696,15 @@ for itr in range(max_iterations):
             print("VALIDATION LOSS",itr,sum(perplxities)/len(perplxities))
             print("NORMAL LOSS",itr,sum(normal_loss)/len(normal_loss))
                 
-        dist.barrier()
-        print("time:",time()-t1)
         
-        cuda.empty_cache()
     except StopIteration:
         iter_ds = iter(ds)
     except Exception:
         print(traceback.format_exc())
+    dist.barrier()
+    print("time:",time()-t1)
+        
+    cuda.empty_cache()
 
 
 

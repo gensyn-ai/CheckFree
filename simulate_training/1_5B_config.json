@@ -4,13 +4,14 @@
     "validation": 20,
     "dmodel": 2048,
     "num_heads": 16,
-    "n_layers_per_stage": 4,
-    "n_stages": 6,
+    "n_layers_per_stage": 2,
+    "n_stages": 12,
     "seq_l": 4096,
-    "batch_size": 2,
-    "mb_count": 8,
+    "batch_size": 8,
+    "mb_count": 2,
     "lr_scale": 1.1,
-    "max_iterations": 100001,
+    "max_iterations": 36001,
     "lr": 0.0003,
-    "16": 0.008
+    "16": 0.008,
+    "10": 0.004
 }

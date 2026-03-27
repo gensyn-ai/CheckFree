@@ -84,20 +84,20 @@ if __name__ == '__main__':
         queue_in = Queue(1024)
         queue_out = Queue(1024)
         device = "cuda"
-        if meshid > 5:
+        if meshid > 2:
             device = "cuda:1"
-        if meshid > 10:
+        if meshid > 3:
             device = "cuda:2"
-        if meshid > 15:
+        if meshid > 6:
             device = "cuda:3"
-        # if curr_id > 9:
-        #     device = "cuda:4"
-        # if curr_id > 12:
-        #     device = "cuda:5"
-        # if curr_id > 15:
-        #     device = "cuda:6"
-        # if curr_id > 18:
-        #     device = "cuda:7"
+        if curr_id > 9:
+            device = "cuda:4"
+        if curr_id > 12:
+            device = "cuda:5"
+        if curr_id > 15:
+            device = "cuda:6"
+        if curr_id > 18:
+            device = "cuda:7"
         cb = loop.create_future()
         subprocess = Process(target=run_p,args=(queue_out,queue_in,curr_id,own_stage,seq_l,n_layers,batch_size,dmodel,num_heads,send_mbs, device)) 
         trainingp = PPProtocl(stage=own_stage, meshid=meshid, 
